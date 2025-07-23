@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { ThemeProvider } from 'next-themes'
-import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
+import SessionProvider from '@/components/admin/SessionProvider'
+import ConditionalLayout from '@/components/layout/ConditionalLayout'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -28,25 +28,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Simple font loading - no onLoad needed */}
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
       <body className="font-modern antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Header />
-          <main className="pt-14 sm:pt-16 lg:pt-20">
-            {children}
-          </main>
-          <Footer />
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   )
