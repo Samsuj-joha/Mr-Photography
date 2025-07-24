@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     const checkSession = async () => {
       const session = await getSession()
       if (session?.user?.role === 'ADMIN') {
-        router.push('/admin/dashboard')
+        router.push('/admin')
       }
     }
     checkSession()

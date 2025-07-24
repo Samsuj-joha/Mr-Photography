@@ -1,3 +1,4 @@
+// src/components/admin/AdminSidebar.tsx
 'use client'
 
 import { useState } from 'react'
@@ -60,14 +61,13 @@ const sidebarItems = [
 ]
 
 export default function AdminSidebar() {
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
   const pathname = usePathname()
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
   }
 
-  const SidebarContent = () => (
+  return (
     <div className="flex flex-col h-full bg-background border-r border-border">
       {/* Logo Section */}
       <div className="flex items-center gap-3 p-6 border-b border-border">
@@ -89,7 +89,6 @@ export default function AdminSidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => setIsMobileOpen(false)}
               >
                 <motion.div
                   whileHover={{ x: 4 }}
@@ -105,9 +104,7 @@ export default function AdminSidebar() {
                     <span className={`font-medium text-sm ${isActive ? 'text-brand-dark' : ''}`}>
                       {item.name}
                     </span>
-                    <span className={`text-xs ${
-                      isActive ? 'text-brand-dark/70' : 'text-muted-foreground'
-                    }`}>
+                    <span className={`text-xs ${isActive ? 'text-brand-dark/70' : 'text-muted-foreground'}`}>
                       {item.description}
                     </span>
                   </div>
@@ -118,58 +115,20 @@ export default function AdminSidebar() {
         </div>
       </nav>
 
-      {/* Bottom Section - Logout */}
+      {/* Footer with Sign Out */}
       <div className="p-4 border-t border-border">
         <Button
-          onClick={handleSignOut}
           variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-muted"
+          onClick={handleSignOut}
+          className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-muted"
         >
-          <LogOut className="h-5 w-5" />
-          <span>Sign Out</span>
+          <LogOut className="h-5 w-5 mr-3" />
+          <div className="flex flex-col items-start">
+            <span className="font-medium text-sm">Sign Out</span>
+            <span className="text-xs text-muted-foreground">Return to website</span>
+          </div>
         </Button>
       </div>
     </div>
-  )
-
-  return (
-    <>
-      {/* Mobile Menu Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="lg:hidden fixed top-4 left-4 z-50 bg-background border border-border"
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-      >
-        {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block fixed left-0 top-0 h-full w-64 z-40">
-        <SidebarContent />
-      </div>
-
-      {/* Mobile Sidebar */}
-      {isMobileOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="lg:hidden fixed inset-0 bg-black/50 z-40"
-            onClick={() => setIsMobileOpen(false)}
-          />
-          
-          {/* Sidebar */}
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ duration: 0.3 }}
-            className="lg:hidden fixed left-0 top-0 h-full w-64 z-50"
-          >
-            <SidebarContent />
-          </motion.div>
-        </>
-      )}
-    </>
   )
 }

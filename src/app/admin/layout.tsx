@@ -1,55 +1,54 @@
 // src/app/admin/layout.tsx
-import { ReactNode } from 'react'
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { usePathname } from 'next/navigation'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import AdminHeader from '@/components/admin/AdminHeader'
-import SessionProvider from '@/components/admin/SessionProvider'
-import { ThemeProvider } from 'next-themes'
 
-// Remove viewport from metadata - move to viewport export
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-}
-
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
-  children: ReactNode
+  children: React.ReactNode
 }) {
-  const session = await getServerSession(authOptions)
+  const pathname = usePathname()
 
-  // Check if user is authenticated and has admin role
-  if (!session || session.user.role !== 'ADMIN') {
-    redirect('/admin/login')
+  // Don't apply admin layout to login page
+  if (pathname === '/admin/login') {
+    return <>{children}</>
+  }
+
+  // Mock user for development (replace with real session later)
+  const mockUser = {
+    id: 'dev-user',
+    name: 'Admin User',
+    email: 'admin@mrphotography.com',
+    image: null,
+    role: 'ADMIN'
   }
 
   return (
-    <SessionProvider session={session}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <div className="min-h-screen bg-background">
-          {/* Sidebar */}
-          <AdminSidebar />
-          
-          {/* Main Content */}
-          <div className="lg:pl-64">
-            {/* Header */}
-            <AdminHeader user={session.user} />
-            
-            {/* Page Content */}
-            <main className="p-4 sm:p-6 lg:p-8">
-              {children}
-            </main>
+    <div className="min-h-screen bg-background">
+      <div className="flex h-screen overflow-hidden">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:flex lg:flex-shrink-0">
+          <div className="flex flex-col w-64">
+            <AdminSidebar />
           </div>
+        </aside>
+
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <AdminHeader user={mockUser} />
+          
+          {/* Page content */}
+          <main className="flex-1 overflow-y-auto bg-muted/30 p-4 lg:p-6">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
         </div>
-      </ThemeProvider>
-    </SessionProvider>
+      </div>
+    </div>
   )
 }

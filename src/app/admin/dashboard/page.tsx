@@ -1,508 +1,383 @@
 // src/app/admin/dashboard/page.tsx
-// Updated to use your existing AdminDashboard component with gallery integration
-
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Upload, 
-  Image as ImageIcon, 
-  Plus, 
-  Search, 
-  Grid3X3,
-  List,
-  Eye,
-  Edit,
-  Trash2,
-  Star,
-  MoreVertical
+  ImageIcon, 
+  FileText, 
+  Eye, 
+  MessageSquare,
+  TrendingUp,
+  Camera,
+  Upload,
+  BarChart3,
+  Users,
+  Calendar,
+  Star
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-// import ImageUploader from '@/components/admin/ImageUploader'
-import ImageUploader from '@/components/ImageUploader'
-import Image from 'next/image'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
-// Import your existing AdminDashboard component
-// import AdminDashboard from '@/components/admin/AdminDashboard'
-
-interface ImageData {
-  id: string
-  title?: string
-  description?: string
-  url: string
-  width?: number
-  height?: number
-  isFeatured: boolean
-  isActive: boolean
-  order: number
-  createdAt: string
-  gallery?: {
-    id: string
-    title: string
-    category: string
+// Dashboard stats data
+const dashboardStats = [
+  {
+    title: 'Total Photos',
+    value: '2,847',
+    change: '+12%',
+    icon: ImageIcon,
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100 dark:bg-blue-900/20'
+  },
+  {
+    title: 'Blog Posts',
+    value: '156',
+    change: '+8%',
+    icon: FileText,
+    color: 'text-green-600',
+    bgColor: 'bg-green-100 dark:bg-green-900/20'
+  },
+  {
+    title: 'Website Views',
+    value: '45,231',
+    change: '+23%',
+    icon: Eye,
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100 dark:bg-purple-900/20'
+  },
+  {
+    title: 'Contact Inquiries',
+    value: '89',
+    change: '+15%',
+    icon: MessageSquare,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100 dark:bg-orange-900/20'
   }
-}
+]
+
+// Quick actions
+const quickActions = [
+  {
+    title: 'Upload Photos',
+    description: 'Add new images to gallery',
+    href: '/admin/gallery',
+    icon: Upload,
+    color: 'bg-blue-600 hover:bg-blue-700'
+  },
+  {
+    title: 'Write Blog Post',
+    description: 'Create new article',
+    href: '/admin/blog',
+    icon: FileText,
+    color: 'bg-green-600 hover:bg-green-700'
+  },
+  {
+    title: 'View Analytics',
+    description: 'Check website performance',
+    href: '/admin/analytics',
+    icon: BarChart3,
+    color: 'bg-purple-600 hover:bg-purple-700'
+  },
+  {
+    title: 'Manage Users',
+    description: 'User management',
+    href: '/admin/users',
+    icon: Users,
+    color: 'bg-orange-600 hover:bg-orange-700'
+  }
+]
+
+// Recent activity
+const recentActivity = [
+  {
+    id: 1,
+    type: 'photo',
+    title: 'New photo uploaded',
+    description: 'Wedding_ceremony_2024.jpg',
+    time: '2 minutes ago',
+    icon: Upload
+  },
+  {
+    id: 2,
+    type: 'blog',
+    title: 'Blog post published',
+    description: 'Photography Tips for Beginners',
+    time: '1 hour ago',
+    icon: FileText
+  },
+  {
+    id: 3,
+    type: 'contact',
+    title: 'New contact inquiry',
+    description: 'Wedding photography booking',
+    time: '3 hours ago',
+    icon: MessageSquare
+  },
+  {
+    id: 4,
+    type: 'review',
+    title: 'New 5-star review',
+    description: 'Amazing work on our engagement shoot!',
+    time: '1 day ago',
+    icon: Star
+  }
+]
+
+// Recent images for preview
+const recentImages = [
+  {
+    id: '1',
+    title: 'Wedding Ceremony',
+    url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=300',
+    isFeatured: true,
+    createdAt: '2024-07-20T10:00:00Z',
+  },
+  {
+    id: '2',
+    title: 'Portrait Session',
+    url: 'https://images.unsplash.com/photo-1494790108755-2616c9c6600d?w=300',
+    isFeatured: false,
+    createdAt: '2024-07-19T14:30:00Z',
+  },
+  {
+    id: '3',
+    title: 'Event Photography',
+    url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300',
+    isFeatured: true,
+    createdAt: '2024-07-18T16:45:00Z',
+  }
+]
 
 export default function DashboardPage() {
-  const [images, setImages] = useState<ImageData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterFeatured, setFilterFeatured] = useState<boolean | null>(null)
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('dashboard')
-
-  // Fetch images
-  const fetchImages = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/images')
-      if (response.ok) {
-        const data = await response.json()
-        setImages(data.images || [])
-      }
-    } catch (error) {
-      console.error('Error fetching images:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchImages()
-  }, [])
-
-  // Filter images based on search and featured status
-  const filteredImages = images.filter(image => {
-    const matchesSearch = !searchQuery || 
-      image.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      image.gallery?.title.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesFeatured = filterFeatured === null || image.isFeatured === filterFeatured
-    
-    return matchesSearch && matchesFeatured
-  })
-
-  // Handle upload completion
-  const handleUploadComplete = (uploadedImages: any[]) => {
-    setImages(prev => [...uploadedImages, ...prev])
-    setUploadDialogOpen(false)
-    fetchImages() // Refresh data
-  }
-
-  // Toggle featured status
-  const toggleFeatured = async (imageId: string, currentStatus: boolean) => {
-    try {
-      const response = await fetch(`/api/images/${imageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isFeatured: !currentStatus })
-      })
-
-      if (response.ok) {
-        setImages(prev => prev.map(img => 
-          img.id === imageId ? { ...img, isFeatured: !currentStatus } : img
-        ))
-      }
-    } catch (error) {
-      console.error('Failed to update image')
-    }
-  }
-
-  // Delete image
-  const deleteImage = async (imageId: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return
-
-    try {
-      const response = await fetch(`/api/images/${imageId}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        setImages(prev => prev.filter(img => img.id !== imageId))
-      }
-    } catch (error) {
-      console.error('Failed to delete image')
-    }
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">
-            Manage your photography business from one place
+            Welcome to your MR-PHOTOGRAPHY admin panel
           </p>
         </div>
-        
-        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="lg" className="gap-2">
-              <Upload className="h-4 w-4" />
-              Upload Images
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Upload New Images</DialogTitle>
-            </DialogHeader>
-            <ImageUploader onUploadComplete={handleUploadComplete} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+            System Online
+          </Badge>
+        </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="dashboard">Dashboard Overview</TabsTrigger>
-          <TabsTrigger value="gallery">Gallery Management</TabsTrigger>
-        </TabsList>
-
-        {/* Dashboard Tab - Using your existing AdminDashboard component */}
-        <TabsContent value="dashboard" className="space-y-6">
-          {/* <AdminDashboard /> */}
-        </TabsContent>
-
-        {/* Gallery Tab */}
-        <TabsContent value="gallery" className="space-y-6">
-          
-          {/* Gallery Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <ImageIcon className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{images.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Images</p>
-                  </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {dashboardStats.map((stat, index) => (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <Card className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-full ${stat.bgColor}`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  {stat.value}
+                </div>
+                <p className="text-xs text-green-600 flex items-center mt-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  {stat.change} from last month
+                </p>
               </CardContent>
             </Card>
+          </motion.div>
+        ))}
+      </div>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                    <Star className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {images.filter(img => img.isFeatured).length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Featured</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <Eye className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {images.filter(img => img.isActive).length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Active</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <Upload className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {Math.round(images.reduce((acc, img) => acc + (img.width || 0) * (img.height || 0), 0) / 1000000)}M
-                    </p>
-                    <p className="text-sm text-muted-foreground">Total Pixels</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Filters & Search */}
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Quick Actions */}
+        <div className="lg:col-span-2">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search images..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={filterFeatured === null ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterFeatured(null)}
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {quickActions.map((action, index) => (
+                  <motion.div
+                    key={action.title}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    All
-                  </Button>
-                  <Button
-                    variant={filterFeatured === true ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterFeatured(true)}
-                  >
-                    <Star className="h-4 w-4 mr-1" />
-                    Featured
-                  </Button>
-                  <Button
-                    variant={filterFeatured === false ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterFeatured(false)}
-                  >
-                    Regular
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={viewMode === 'grid' ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                  >
-                    <Grid3X3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
+                    <Link href={action.href}>
+                      <Card className="hover:shadow-md transition-all duration-200 cursor-pointer group">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-3 rounded-lg text-white ${action.color} group-hover:scale-110 transition-transform`}>
+                              <action.icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-foreground group-hover:text-brand-accent transition-colors">
+                                {action.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {action.description}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                ))}
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Images Display */}
+        {/* Recent Activity */}
+        <div>
           <Card>
-            <CardContent className="p-6">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"
-                    />
-                    <p className="text-muted-foreground">Loading images...</p>
-                  </div>
-                </div>
-              ) : filteredImages.length === 0 ? (
-                <div className="text-center py-12">
-                  <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No images found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {searchQuery || filterFeatured !== null 
-                      ? 'Try adjusting your search or filters'
-                      : 'Upload your first images to get started'
-                    }
-                  </p>
-                  <Button onClick={() => setUploadDialogOpen(true)}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Images
-                  </Button>
-                </div>
-              ) : (
-                <div className={
-                  viewMode === 'grid' 
-                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
-                    : "space-y-4"
-                }>
-                  {filteredImages.map((image, index) => (
-                    <motion.div
-                      key={image.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className={viewMode === 'grid' ? "group" : ""}
-                    >
-                      {viewMode === 'grid' ? (
-                        /* Grid View */
-                        <div className="relative">
-                          <div className="aspect-square relative rounded-lg overflow-hidden bg-gray-100">
-                            <Image
-                              src={image.url}
-                              alt={image.title || 'Image'}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
-                            
-                            {/* Overlay with actions */}
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  onClick={() => toggleFeatured(image.id, image.isFeatured)}
-                                >
-                                  <Star className={`h-4 w-4 ${image.isFeatured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                                </Button>
-                                <Button size="sm" variant="secondary">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive"
-                                  onClick={() => deleteImage(image.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Featured badge */}
-                            {image.isFeatured && (
-                              <div className="absolute top-2 left-2">
-                                <Badge variant="secondary" className="bg-yellow-500 text-yellow-900">
-                                  <Star className="h-3 w-3 mr-1" />
-                                  Featured
-                                </Badge>
-                              </div>
-                            )}
-
-                            {/* Status badge */}
-                            {!image.isActive && (
-                              <div className="absolute top-2 right-2">
-                                <Badge variant="destructive">
-                                  Hidden
-                                </Badge>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Image info */}
-                          <div className="mt-2">
-                            <p className="text-sm font-medium truncate">
-                              {image.title || 'Untitled'}
-                            </p>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{image.width}×{image.height}</span>
-                              {image.gallery && (
-                                <Badge variant="outline" className="text-xs">
-                                  {image.gallery.category}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* List View */
-                        <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="w-16 h-16 relative rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                            <Image
-                              src={image.url}
-                              alt={image.title || 'Image'}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium truncate">
-                                {image.title || 'Untitled'}
-                              </h3>
-                              {image.isFeatured && (
-                                <Badge variant="secondary" className="bg-yellow-500 text-yellow-900">
-                                  <Star className="h-3 w-3 mr-1" />
-                                  Featured
-                                </Badge>
-                              )}
-                              {!image.isActive && (
-                                <Badge variant="destructive">Hidden</Badge>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>{image.width}×{image.height}</span>
-                              <span>{new Date(image.createdAt).toLocaleDateString()}</span>
-                              {image.gallery && (
-                                <Badge variant="outline">{image.gallery.category}</Badge>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => toggleFeatured(image.id, image.isFeatured)}
-                            >
-                              <Star className={`h-4 w-4 ${image.isFeatured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                            </Button>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => deleteImage(image.id)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.map((activity, index) => (
+                  <motion.div
+                    key={activity.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="p-1 bg-muted rounded-full mt-1">
+                      <activity.icon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">
+                        {activity.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {activity.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.time}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <Button variant="ghost" className="w-full mt-4" asChild>
+                <Link href="/admin/activity">View All Activity</Link>
+              </Button>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
+
+      {/* Recent Images Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Recent Images
+            </span>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/gallery">
+                View Gallery
+              </Link>
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+            {recentImages.map((image, index) => (
+              <motion.div
+                key={image.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className="group relative"
+              >
+                <div className="aspect-square relative rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={image.url}
+                    alt={image.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  
+                  {/* Featured badge */}
+                  {image.isFeatured && (
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-yellow-500 text-yellow-900 text-xs">
+                        <Star className="h-3 w-3 mr-1 fill-current" />
+                        Featured
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <Button size="sm" variant="secondary">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <p className="text-sm font-medium mt-2 truncate">{image.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(image.createdAt).toLocaleDateString()}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Website Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Website Preview
+            </span>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/" target="_blank">
+                Visit Website
+              </Link>
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted rounded-lg p-4 text-center">
+            <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              Preview of your photography website will appear here
+            </p>
+            <Button variant="outline" size="sm" className="mt-2" asChild>
+              <Link href="/">View Live Site</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

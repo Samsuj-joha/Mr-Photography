@@ -1,3 +1,4 @@
+// src/components/layout/ConditionalLayout.tsx
 'use client'
 
 import { usePathname } from 'next/navigation'
